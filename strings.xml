@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Glyph Distance</string>
+    <string name="toy_name">Distanza oggi</string>
+    <string name="toy_summary">Mostra i chilometri di oggi registrati da Google Fit.</string>
+</resources>

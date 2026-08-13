@@ -1,0 +1,68 @@
+name: Build GlyphDistanceToy APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract v0.6.0 source
+        run: |
+          rm -rf buildsrc
+          mkdir buildsrc
+          unzip -q GlyphDistanceToy-v0.6.0-source.zip -d buildsrc
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK
+        run: |
+          sdkmanager "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Download Nothing Glyph Matrix SDK
+        run: |
+          mkdir -p buildsrc/app/libs
+          curl -L --fail             "https://github.com/Nothing-Developer-Programme/GlyphMatrix-Developer-Kit/raw/refs/heads/main/glyph-matrix-sdk-2.0.aar"             -o buildsrc/app/libs/glyph-matrix-sdk-2.0.aar
+
+      - name: Build v0.6.0 APK
+        working-directory: buildsrc
+        run: |
+          gradle :app:assembleDebug --stacktrace
+
+      - name: Prepare APK and checksum
+        run: |
+          cp buildsrc/app/build/outputs/apk/debug/app-debug.apk GlyphDistanceToy-v0.6.0-debug.apk
+          sha256sum GlyphDistanceToy-v0.6.0-debug.apk > SHA256SUMS.txt
+
+      - name: Verify expected APK
+        run: |
+          test -f GlyphDistanceToy-v0.6.0-debug.apk
+          ls -lh GlyphDistanceToy-v0.6.0-debug.apk SHA256SUMS.txt
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GlyphDistanceToy-v0.6.0
+          path: |
+            GlyphDistanceToy-v0.6.0-debug.apk
+            SHA256SUMS.txt
+          if-no-files-found: error
